@@ -1,0 +1,22 @@
+{
+  "sdkPath": "",
+  "emulatorRoot": "",
+  "pythonPath": "",
+  "toolchainPath": "/opt/devkitpro/devkitARM/bin",
+  "projectsRoot": "/home/moonii/Documents/Northern/Projects",
+  "emulatorPath": "",
+  "sdmcPath": "",
+  "emulatorArgs": "",
+  "recentProjects": [
+    "/home/moonii/Documents/Northern/Projects/MyApp-2",
+    "/home/moonii/Documents/Northern/Projects/MyApp",
+    "/home/moonii/Documents/Northern/Projects/Test"
+  ],
+  "window": {
+    "width": 960,
+    "height": 988,
+    "x": 0,
+    "y": 0,
+    "maximized": true
+  }
+}

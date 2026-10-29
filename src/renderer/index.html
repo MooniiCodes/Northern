@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self';">
+  <title>Northern Editor</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="titlebar">
+      <div class="brand"><span class="brand-mark">A</span></div>
+      <button id="project-heading" class="project-heading" title="App name and entry file">
+        <span id="project-name" class="project-name">No project open</span>
+        <span id="project-language" class="badge hidden">C</span>
+        <span id="project-dirty" class="dirty-dot hidden" title="Unsaved changes"></span>
+      </button>
+      <nav class="mode-tabs" id="mode-tabs">
+        <button class="mode-tab active" data-mode="editor">Editor</button>
+        <button class="mode-tab" data-mode="painter">Painter</button>
+      </nav>
+      <div class="title-actions">
+        <button id="btn-build" class="btn">Build</button>
+        <button id="btn-run" class="btn primary">Run</button>
+        <button id="btn-emulator" class="btn ghost" title="Build, copy to SDMC and launch Azahar/Citra/Lime3DS">3DS</button>
+        <button id="btn-settings" class="icon-btn" title="Settings">⚙</button>
+      </div>
+    </header>
+
+    <div class="workspace">
+      <aside class="sidebar" id="sidebar">
+        <div class="sidebar-head">
+          <span>Projects</span>
+          <button id="btn-new-project" class="icon-btn small" title="New project">+</button>
+        </div>
+        <div id="project-list" class="project-list"></div>
+        <div class="sidebar-head sub">
+          <span>Files</span>
+          <button id="btn-new-file" class="icon-btn small" title="New file">+</button>
+        </div>
+        <div id="file-list" class="file-list"></div>
+        <section class="app-info" style="padding:8px; border-top:1px solid rgba(255,255,255,.08);">
+          <input id="app-name" type="text" class="panel-select" style="width:100%; margin-bottom:6px;">
+          <span id="app-language" class="hint-inline"></span>
+          <select id="app-entry" class="panel-select" style="width:100%; margin:6px 0;"></select>
+          <p id="file-hint" class="hint"></p>
+        </section>
+        <div class="sidebar-foot">
+          <div id="env-summary" class="env-summary" title="Detected tools"></div>
+          <button id="btn-open-folder" class="btn ghost wide">Open folder…</button>
+        </div>
+      </aside>
+
+      <main class="main">
+        <!-- ============================== editor ============================== -->
+        <section id="view-editor" class="view">
+          <div class="editor-bar">
+            <div id="file-tabs" class="tabs"></div>
+            <div class="file-actions">
+              <button id="btn-rename-file" class="btn tiny ghost">Rename</button>
+              <button id="btn-delete-file" class="btn tiny ghost danger">Delete</button>
+            </div>
+          </div>
+          <div id="editor-wrap" class="editor-wrap">
+            <div id="empty-state" class="empty-state">
+              <div class="empty-mark">A</div>
+              <h1>Make an Aurora3DS app</h1>
+              <p>Create a project, code it, paint its assets and lay out its
+                 screens — then run it right on your PC.</p>
+              <div class="empty-actions">
+                <button id="btn-empty-new" class="btn primary">New project</button>
+                <button id="btn-empty-open" class="btn">Open folder</button>
+              </div>
+            </div>
+            <div id="editor-host" class="editor-host hidden"></div>
+          </div>
+        </section>
+
+        <!-- ============================== painter ============================= -->
+        <section id="view-painter" class="view hidden">
+          <div class="toolbar">
+            <div class="tool-row" id="painter-tools">
+              <button class="tool-btn active" data-paint-tool="pen" title="Pen (P)">Pen</button>
+              <button class="tool-btn" data-paint-tool="eraser" title="Eraser (E)">Eraser</button>
+              <button class="tool-btn" data-paint-tool="fill" title="Fill (F)">Fill</button>
+              <button class="tool-btn" data-paint-tool="picker" title="Pick colour (I)">Pick</button>
+            </div>
+            <label class="inline-field">
+              <input type="color" id="paint-color" value="#64e8c8" title="Colour (O to pick)">
+            </label>
+            <button id="paint-undo" class="btn tiny ghost" title="Undo (Ctrl+Z)">Undo</button>
+            <button id="paint-redo" class="btn tiny ghost" title="Redo (Ctrl+Shift+Z)">Redo</button>
+            <span class="spacer"></span>
+            <button id="paint-new" class="btn tiny">New</button>
+            <button id="paint-logo" class="btn tiny">Edit logo</button>
+            <button id="paint-use-logo" class="btn tiny">Use as logo</button>
+          </div>
+          <div class="workbench">
+            <div class="stage-wrap" id="paint-stage">
+              <canvas id="paint-canvas" width="32" height="32"></canvas>
+            </div>
+            <aside class="side-panel">
+              <section class="side-section">
+                <h3>Canvas <span class="hint-inline" id="paint-info">32 × 32</span></h3>
+                <select id="paint-size" class="panel-select" title="Canvas size">
+                  <option value="16">16 × 16</option>
+                  <option value="32" selected>32 × 32</option>
+                  <option value="64">64 × 64</option>
+                  <option value="128">128 × 128</option>
+                  <option value="256">256 × 256</option>
+                </select>
+                <label class="check-row"><input type="checkbox" id="paint-grid" checked> Pixel grid</label>
+                <p class="hint" id="paint-name-hint">Nothing open — press New.</p>
+              </section>
+              <section class="side-section grow">
+                <h3>Assets</h3>
+                <div id="paint-asset-list" class="asset-list"></div>
+              </section>
+            </aside>
+          </div>
+        </section>
+
+        <!-- ============================== designer ============================ -->
+        <section id="view-designer" class="view hidden">
+          <div class="toolbar">
+            <div class="tool-row">
+              <button class="tool-btn active" id="designer-screen-top" data-designer-screen="top">Top</button>
+              <button class="tool-btn" id="designer-screen-bottom" data-designer-screen="bottom">Bottom</button>
+            </div>
+            <div class="tool-row" id="designer-palette">
+              <button class="widget-btn" data-widget="label">+ Label</button>
+              <button class="widget-btn" data-widget="button">+ Button</button>
+              <button class="widget-btn" data-widget="panel">+ Panel</button>
+              <button class="widget-btn" data-widget="circle">+ Circle</button>
+              <button class="widget-btn" data-widget="image">+ Image</button>
+            </div>
+            <button id="designer-delete" class="btn tiny ghost danger" title="Delete (Del)">Delete</button>
+            <span class="spacer"></span>
+            <button id="designer-generate" class="btn tiny primary">Generate code</button>
+          </div>
+          <div class="workbench">
+            <div class="stage-wrap" id="designer-stage">
+              <div id="designer-canvas" class="designer-canvas"
+                   data-screen="top"></div>
+            </div>
+            <aside class="side-panel">
+              <section class="side-section grow" id="designer-props"></section>
+              <section class="side-section">
+                <h3>Zoom</h3>
+                <select id="designer-zoom" class="panel-select">
+                  <option value="1">1×</option>
+                  <option value="1.5" selected>1.5×</option>
+                  <option value="2">2×</option>
+                  <option value="2.5">2.5×</option>
+                </select>
+                <button id="designer-clear" class="btn tiny ghost wide">Clear screen</button>
+                <p class="hint">The layout saves to ui.json in the project.
+                   Generate code writes ui_gen.c/.h or ui_gen.aur.</p>
+              </section>
+            </aside>
+          </div>
+        </section>
+
+        <section id="bottom-panel" class="bottom-panel hidden">
+          <div class="panel-head">
+            <button class="panel-tab active" data-panel="output">Output</button>
+            <button class="panel-tab" data-panel="problems">Problems</button>
+            <button class="panel-tab" data-panel="info">Info</button>
+            <span class="spacer"></span>
+            <button id="btn-clear-output" class="btn tiny ghost">Clear</button>
+            <button id="btn-close-panel" class="icon-btn small" title="Hide panel">×</button>
+          </div>
+          <pre id="output" class="output"></pre>
+        </section>
+      </main>
+    </div>
+
+    <footer class="statusbar">
+      <span id="status-text">Ready</span>
+      <span class="spacer"></span>
+      <span id="status-aurora" class="status-muted"></span>
+      <span id="status-sdk" class="status-muted"></span>
+      <span id="status-cursor" class="status-muted"></span>
+    </footer>
+  </div>
+
+  <div id="modal-root" class="modal-root hidden"></div>
+  <div id="toast-root" class="toast-root"></div>
+
+  <script src="editor.js"></script>
+  <script src="icon-editor.js"></script>
+  <script src="painter.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
