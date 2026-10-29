@@ -11,7 +11,11 @@ const {
 } = require('./projects');
 
 const activePreviews = new Map();
-const ROOT = path.resolve(__dirname, '..', '..');
+let ROOT = path.resolve(__dirname, '..', '..');
+try {
+  const { app } = require('electron');
+  if (app && app.isPackaged) ROOT = process.resourcesPath;
+} catch (error) {}
 const EMULATOR_DIR = path.join(ROOT, 'emulator');
 
 function previewDir(dir) {

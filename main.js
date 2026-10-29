@@ -12,6 +12,9 @@ const { loadConfig, saveConfig, appBaseDir } = require('./src/main/config');
 const { registerIpc } = require('./src/main/ipc');
 const { stopAllPreviews } = require('./src/main/preview');
 const aurora = require('./src/main/aurora');
+app.disableHardwareAcceleration();
+app.commandLine.appendSwitch('no-sandbox');
+app.commandLine.appendSwitch('disable-gpu');
 
 const CONFIG_BASE = appBaseDir();
 let config = loadConfig(CONFIG_BASE);
@@ -69,7 +72,14 @@ function createWindow() {
 
   mainWindow.loadFile(path.join(__dirname, 'src', 'renderer', 'index.html'));
 
+  const showFallback = setTimeout(() => {
+    if (mainWindow && !mainWindow.isDestroyed() && !mainWindow.isVisible()) {
+      if (winConfig.maximized) mainWindow.maximize();
+      mainWindow.show();
+    }
+  }, 1500);
   mainWindow.once('ready-to-show', () => {
+    clearTimeout(showFallback);
     if (winConfig.maximized) mainWindow.maximize();
     mainWindow.show();
   });
@@ -246,17 +256,34 @@ if (process.env.WAYLAND_DISPLAY && !process.env.DISPLAY) {
   app.commandLine.appendSwitch('ozone-platform', 'wayland');
 }
 
-if (!app.requestSingleInstanceLock()) {
-  app.quit();
-} else {
-  app.on('second-instance', () => {
-    if (mainWindow) {
-      if (mainWindow.isMinimized()) mainWindow.restore();
-      mainWindow.focus();
+// Remove a stale single-instance lock left behind by a crashed/unclean exit.
+try {
+  const lockDir = path.join(require('os').homedir(), '.config', 'northern-editor');
+  const lockPath = path.join(lockDir, 'SingletonLock');
+  const target = require('fs').readlinkSync(lockPath);
+  const pid = Number(String(target).split('-').pop());
+  if (pid > 0) {
+    try { process.kill(pid, 0); }
+    catch (error) {
+      require('fs').rmSync(lockPath, { force: true });
+      require('fs').rmSync(path.join(lockDir, 'SingletonCookie'), { force: true });
+      require('fs').rmSync(path.join(lockDir, 'SingletonSocket'), { force: true });
     }
-  });
+  }
+} catch (error) {}
 
-  app.whenReady().then(() => {
+/* Best-effort single-instance lock: never block the app from opening. */
+try { app.requestSingleInstanceLock(); } catch (error) {}
+
+app.on('second-instance', () => {
+  if (mainWindow) {
+    if (mainWindow.isMinimized()) mainWindow.restore();
+    if (!mainWindow.isVisible()) mainWindow.show();
+    mainWindow.focus();
+  }
+});
+
+app.whenReady().then(() => {
     /* Make sure the bundled AuroraOS SDK exists before the window opens. */
     let vendor = null;
     try {
@@ -295,7 +322,6 @@ if (!app.requestSingleInstanceLock()) {
       if (BrowserWindow.getAllWindows().length === 0) createWindow();
     });
   });
-}
 
 app.on('before-quit', () => {
   stopAllPreviews();

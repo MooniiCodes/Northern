@@ -1,12 +1,12 @@
 {
   "name": "northern-editor",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": true,
   "description": "Northern Editor",
   "main": "main.js",
   "scripts": {
-    "start": "electron .",
-    "dev": "electron . --dev",
+    "start": "electron . --no-sandbox --disable-gpu --disable-gpu-compositing --use-gl=swiftshader",
+    "dev": "electron . --dev --no-sandbox --disable-gpu --disable-gpu-compositing --use-gl=swiftshader",
     "check": "node scripts/check-js.js",
     "test": "node test/smoke.js",
     "build:linux": "electron-builder --linux",
@@ -41,6 +41,16 @@
     },
     "linux": {
       "target": "AppImage"
-    }
+    },
+    "extraResources": [
+      {
+        "from": "Aurora",
+        "to": "Aurora"
+      },
+      {
+        "from": "emulator",
+        "to": "emulator"
+      }
+    ]
   }
 }

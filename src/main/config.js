@@ -27,18 +27,35 @@ function expandHome(value) {
   return path.resolve(out);
 }
 
+function isWritableDir(dir) {
+  try {
+    fs.mkdirSync(dir, { recursive: true });
+    const testFile = path.join(dir, '.northern-write-test');
+    fs.writeFileSync(testFile, 'ok');
+    fs.rmSync(testFile, { force: true });
+    return true;
+  } catch (error) {
+    return false;
+  }
+}
+
 function appBaseDir() {
-  if (process.env.APPIMAGE) return path.dirname(process.env.APPIMAGE);
+  const candidates = [];
+  if (process.env.APPIMAGE) candidates.push(path.dirname(process.env.APPIMAGE));
   try {
     const { app } = require('electron');
     if (app && app.isPackaged) {
       const exeDir = path.dirname(process.execPath);
-      // AppImages are mounted read-only; fall back to a writable home location.
-      if (exeDir.includes('/.mount_')) return path.join(os.homedir(), '.config', 'northern-editor');
-      return exeDir;
+      if (!exeDir.includes('/.mount_')) candidates.push(exeDir);
     }
   } catch (error) {
     // Running under tests or without Electron.
+  }
+  candidates.push(path.join(os.homedir(), '.config', 'northern-editor'));
+  candidates.push(path.resolve(__dirname, '..', '..'));
+
+  for (const dir of candidates) {
+    if (dir && isWritableDir(dir)) return dir;
   }
   return path.resolve(__dirname, '..', '..');
 }

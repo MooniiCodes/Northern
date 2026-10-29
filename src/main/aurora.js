@@ -21,6 +21,10 @@ const CHECK_INTERVAL_MS = 12 * 60 * 60 * 1000;
 let updating = null;
 
 function studioRoot() {
+  try {
+    const { app } = require('electron');
+    if (app && app.isPackaged) return process.resourcesPath;
+  } catch (error) {}
   return path.resolve(__dirname, '..', '..');
 }
 
